@@ -80,7 +80,6 @@
       background: #fff; animation: loading 1.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
     }
 
-    
     @keyframes pulse { 0% { opacity: 0.3; transform: scale(0.98); } 100% { opacity: 1; transform: scale(1); } }
     @keyframes loading { 0% { left: -100%; } 100% { left: 100%; } }
 
@@ -468,7 +467,7 @@
       
       setTimeout(() => {
         const adminKeyInput = document.getElementById('adminKey');
-        if (adminKeyInput && adminKeyInput.value.trim() !== '') {
+        if (adminKeyInput && adminKeyInput.value.trim() !== '' && !isAdmin) {
           checkAdminPassword();
         }
       }, 300);
@@ -477,6 +476,18 @@
     window.addEventListener('DOMContentLoaded', () => {
       const savedNames = localStorage.getItem('winterfell_master_list');
       if (savedNames) masterListTextarea.value = savedNames;
+
+      if (sessionStorage.getItem('winterfell_logged_in') === 'true') {
+        setTimeout(() => {
+          isAdmin = true;
+          roleBadge.innerText = "แอดมิน";
+          roleBadge.classList.add('admin');
+          scanCard.classList.remove('locked');
+          clearAllBtn.style.display = 'block';
+          authBox.innerHTML = `<button class="btn-action btn-secondary" onclick="logoutAdmin()">ออกจากระบบ</button>`;
+          renderHistory(latestHistorySnapshot);
+        }, 200);
+      }
     });
 
     masterListTextarea.addEventListener('input', () => {
@@ -503,6 +514,7 @@
       
       if (inputVal === dbAdminPassword) {
         isAdmin = true;
+        sessionStorage.setItem('winterfell_logged_in', 'true');
         roleBadge.innerText = "แอดมิน";
         roleBadge.classList.add('admin');
         scanCard.classList.remove('locked');
@@ -518,6 +530,7 @@
 
     function logoutAdmin() {
       isAdmin = false;
+      sessionStorage.removeItem('winterfell_logged_in');
       roleBadge.innerText = "บุคคลทั่วไป";
       roleBadge.classList.remove('admin');
       scanCard.classList.add('locked');
