@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Winterfell Godmyhxnd</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg: #050505;
+      --card-bg: rgba(18, 18, 18, 0.75);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --card-border-light: rgba(255, 255, 255, 0.25);
+      --text-main: #f3f3f3;
+      --text-sub: #888888;
+      --accent: #ffffff;
+      --danger: #ff4444;
+      --success: #00e676;
+    }
+
+    * { box-sizing: border-box; font-family: 'Kanit', sans-serif; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px;
+      overflow-x: hidden;
+      position: relative;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    #snowCanvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #loader {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: #000000;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.8s ease, visibility 0.8s ease;
+    }
+    #loader.hidden { 
+      opacity: 0; 
+      visibility: hidden; 
+      pointer-events: none; 
+    }
+    .loader-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.8rem; font-weight: 800; letter-spacing: 6px;
+      color: #fff; text-transform: uppercase; animation: pulse 1.5s infinite alternate;
+    }
+    .loader-bar {
+      width: 120px; height: 2px; background: rgba(255, 255, 255, 0.2);
+      margin-top: 20px; position: relative; overflow: hidden;
+    }
+    .loader-bar::after {
+      content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+      background: #fff; animation: loading 1.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+    }
+
+    @keyframes pulse { 0% { opacity: 0.3; transform: scale(0.98); } 100% { opacity: 1; transform: scale(1); } }
+    @keyframes loading { 0% { left: -100%; } 100% { left: 100%; } }
+
+    .header { text-align: center; margin-bottom: 28px; z-index: 1; margin-top: 10px; }
+    .header h1 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2rem; font-weight: 800; letter-spacing: 4px;
+      text-transform: uppercase; color: #fff; border-bottom: 2px solid #fff;
+      display: inline-block; padding-bottom: 4px;
+    }
+
+    .admin-bar {
+      width: 100%; max-width: 850px; background: var(--card-bg);
+      backdrop-filter: blur(12px); border: 1px solid var(--card-border);
+      border-radius: 8px; padding: 12px 20px; display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 20px; z-index: 1;
+    }
+    .role-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem; padding: 4px 10px; border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08); color: var(--text-sub);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .role-badge.admin { background: #fff; color: #000; font-weight: 600; }
+
+    .login-box { display: flex; gap: 8px; align-items: center; }
+    .login-box input {
+      background: rgba(0,0,0,0.6); border: 1px solid var(--card-border);
+      border-radius: 4px; padding: 6px 12px; color: #fff; outline: none; font-size: 0.85rem;
+      font-family: 'JetBrains Mono', monospace; width: 160px;
+    }
+    .login-box input:focus { border-color: var(--card-border-light); }
+    
+    .btn-action {
+      background: #ffffff; border: 1px solid #ffffff; color: #000000;
+      padding: 6px 16px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;
+      font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+      transition: all 0.2s ease;
+    }
+    .btn-action:hover { background: #e2e2e2; }
+    .btn-secondary { background: transparent; border: 1px solid var(--card-border-light); color: #fff; }
+    .btn-secondary:hover { background: rgba(255, 255, 255, 0.1); }
+    
+    .btn-danger {
+      background: transparent; border: 1px solid var(--danger); color: var(--danger);
+      padding: 4px 10px; font-size: 0.75rem; border-radius: 4px; cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-danger:hover { background: var(--danger); color: #fff; }
+
+    .app-container { width: 100%; max-width: 850px; display: flex; flex-direction: column; gap: 20px; z-index: 1; }
+    .card {
+      background: var(--card-bg); backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border); border-radius: 12px; padding: 24px;
+    }
+
+    .admin-only { position: relative; }
+    .admin-only.locked::after {
+      content: "🔒 กรุณายืนยันรหัสผ่านแอดมินเพื่อใช้งาน";
+      font-family: 'Kanit', sans-serif; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(5, 5, 5, 0.88); backdrop-filter: blur(6px);
+      display: flex; justify-content: center; align-items: center;
+      color: var(--text-sub); font-size: 1.1rem; border-radius: 12px; z-index: 10; letter-spacing: 1px;
+    }
+
+    .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 768px) { .input-grid { grid-template-columns: 1fr; } }
+
+    h2 { font-size: 1rem; font-weight: 500; margin-bottom: 12px; letter-spacing: 1px; text-transform: uppercase; }
+
+    textarea {
+      width: 100%; height: 180px; background: rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--card-border); border-radius: 8px; padding: 14px;
+      color: #fff; font-size: 0.85rem; resize: none; outline: none;
+      font-family: 'JetBrains Mono', monospace;
+      -webkit-user-select: text; user-select: text;
+    }
+    textarea:focus { border-color: var(--card-border-light); }
+
+    .dropzone {
+      height: 180px; border: 1px dashed var(--card-border-light);
+      background: rgba(0, 0, 0, 0.3); border-radius: 8px;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; cursor: pointer; position: relative; overflow: hidden; text-align: center;
+      color: var(--text-sub); font-size: 0.85rem; transition: border-color 0.2s;
+    }
+    .dropzone:hover { border-color: #fff; color: #fff; }
+
+    .preview-img {
+      max-width: 100%; max-height: 100%; object-fit: contain;
+      position: absolute; display: none; background: #000;
+    }
+
+    .btn-delete-img {
+      position: absolute; top: 8px; right: 8px;
+      background: rgba(255, 68, 68, 0.85); color: #ffffff;
+      border: none; border-radius: 4px; padding: 4px 10px; font-size: 0.75rem;
+      cursor: pointer; display: none; z-index: 15; backdrop-filter: blur(4px);
+      transition: background 0.2s ease;
+    }
+    .btn-delete-img:hover { background: #ff4444; }
+
+    .btn-scan {
+      width: 100%; margin-top: 20px; padding: 12px;
+      background: #ffffff; border: none; border-radius: 6px;
+      color: #000; font-size: 0.95rem; cursor: pointer; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase; transition: opacity 0.2s;
+    }
+    .btn-scan:hover { opacity: 0.9; }
+
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px);
+      z-index: 10000; display: flex; justify-content: center; align-items: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    }
+    .modal-overlay.active { opacity: 1; pointer-events: all; }
+
+    .modal-box {
+      width: 90%; max-width: 550px; background: #0d0d0d;
+      border: 1px solid var(--card-border-light); border-radius: 12px;
+      padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+      position: relative;
+    }
+
+    .modal-actions { display: flex; gap: 12px; margin-top: 20px; }
+    .modal-actions button { flex: 1; padding: 10px; }
+
+    .result-box-modal { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+    .res-col {
+      background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border);
+      border-radius: 8px; padding: 14px; max-height: 240px; overflow-y: auto;
+    }
+    .res-col.present-box { border-color: rgba(0, 230, 118, 0.25); background: rgba(0, 230, 118, 0.02); }
+    .res-col.absent-box { border-color: rgba(255, 68, 68, 0.25); background: rgba(255, 68, 68, 0.02); }
+
+    .res-col h4 {
+      font-size: 0.8rem; margin-bottom: 10px; text-transform: uppercase;
+      letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .name-list { list-style: none; }
+    .name-item {
+      font-size: 0.8rem; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;
+      background: rgba(255, 255, 255, 0.03); font-family: 'JetBrains Mono', monospace;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .present-box .name-item { color: #a3e635; border-left: 2px solid var(--success); }
+    .absent-box .name-item { color: #f87171; border-left: 2px solid var(--danger); }
+
+    .modal-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px;
+      font-family: 'JetBrains Mono', monospace; text-align: center;
+    }
+    .stat-card {
+      background: rgba(255, 255, 255, 0.04); border: 1px solid var(--card-border);
+      border-radius: 6px; padding: 8px;
+    }
+    .stat-card .val { font-size: 1.1rem; font-weight: 800; }
+    .stat-card .lbl { font-size: 0.65rem; color: var(--text-sub); text-transform: uppercase; }
+
+    .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .history-list { display: flex; flex-direction: column; gap: 10px; max-height: 380px; overflow-y: auto; }
+    
+    .history-item {
+      background: rgba(0, 0, 0, 0.4); border: 1px solid var(--card-border);
+      border-radius: 8px; padding: 14px 16px; font-family: 'Kanit', sans-serif;
+      position: relative; cursor: pointer; transition: all 0.2s ease;
+    }
+    .history-item:hover {
+      border-color: var(--card-border-light);
+      background: rgba(255, 255, 255, 0.03);
+      transform: translateY(-1px);
+    }
+    .history-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .war-title { font-size: 0.95rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px; }
+    .war-title::before { content: "⚔️"; font-size: 0.85rem; }
+    .history-time { font-size: 0.75rem; color: var(--text-sub); font-family: 'JetBrains Mono', monospace; }
+    .history-details { display: flex; gap: 16px; font-size: 0.85rem; margin-bottom: 4px; }
+    
+    .click-hint {
+      font-size: 0.7rem; color: var(--text-sub); display: flex; align-items: center; gap: 4px; margin-top: 4px;
+    }
+  </style>
+</head>
+<body oncontextmenu="return false;">
+
+  <canvas id="snowCanvas"></canvas>
+
+  <div id="loader">
+    <div class="loader-title">Winterfell</div>
+    <div class="loader-bar"></div>
+  </div>
+
+  <div class="header">
+    <h1>Winterfell Godmyhxnd</h1>
+  </div>
+
+  <div class="admin-bar">
+    <div>
+      <span id="roleBadge" class="role-badge">บุคคลทั่วไป</span>
+    </div>
+    <div class="login-box" id="authBox">
+      <input type="password" id="adminKey" placeholder="รหัสผ่านแอดมิน" onkeypress="if(event.key==='Enter') checkAdminPassword()">
+      <button class="btn-action" onclick="checkAdminPassword()">เข้าสู่ระบบ</button>
+    </div>
+  </div>
+
+  <div class="app-container">
+    
+    <div class="card admin-only locked" id="scanCard">
+      <div class="input-grid">
+        <div>
+          <h2>รายชื่อทั้งหมด (MASTER LIST)</h2>
+          <textarea id="masterList" placeholder="คริส&#10;สุด&#10;หล่อ"></textarea>
+        </div>
+
+        <div>
+          <h2>รูปภาพแนบสแกน</h2>
+          <div class="dropzone" id="dropzone" onclick="triggerFileInput(event)">
+            <p>อัปโหลด / วางรูปภาพ (Ctrl+V)</p>
+            <input type="file" id="imageInput" accept="image/*" style="display: none;">
+            <img id="preview" class="preview-img" alt="Preview">
+            <button id="btnDeleteImg" class="btn-delete-img" onclick="removeSelectedImage(event)">✕ ลบรูปภาพ</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-scan" id="processBtn" onclick="processAttendance()">สแกนและตรวจสอบรายชื่อ</button>
+      <div class="status-text" id="statusText" style="text-align:center; margin-top:10px; font-size:0.8rem; color:var(--text-sub); font-family:'Kanit', sans-serif;">ระบบพร้อมใช้งาน</div>
+    </div>
+
+    <div class="card">
+      <div class="history-header">
+        <h2>ประวัติการเช็ครายชื่อ (คลิกดูรายชื่อ)</h2>
+        <button id="clearAllBtn" class="btn-danger" style="display: none;" onclick="promptClearAllHistory()">ลบประวัติทั้งหมด</button>
+      </div>
+      <div class="history-list" id="historyList">
+        <p style="text-align: center; color: var(--text-sub); font-size: 0.85rem;">กำลังเชื่อมต่อ...</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal-box">
+      <h2>ยืนยันการเช็คชื่อ</h2>
+      <p id="modalWarTitle" style="font-size: 0.85rem; color: var(--text-sub); margin-top: 4px;"></p>
+
+      <div class="result-box-modal">
+        <div class="res-col present-box">
+          <h4 style="color: var(--success);">มา (<span id="modalPresentCount">0</span>)</h4>
+          <ul class="name-list" id="modalPresentList"></ul>
+        </div>
+        <div class="res-col absent-box">
+          <h4 style="color: var(--danger);">ขาด (<span id="modalAbsentCount">0</span>)</h4>
+          <ul class="name-list" id="modalAbsentList"></ul>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-action btn-secondary" onclick="closeModal('confirmModal')">ยกเลิก</button>
+        <button class="btn-action" onclick="saveToDatabase()">บันทึกข้อมูล</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <h2 id="detailWarTitle" style="color: #fff; font-size: 1.1rem;">รายละเอียด</h2>
+          <p id="detailTime" style="font-size: 0.75rem; color: var(--text-sub); font-family:'JetBrains Mono', monospace; margin-top: 2px;"></p>
+        </div>
+        <button onclick="closeModal('detailModal')" class="btn-secondary" style="border:none; color:var(--text-sub); font-size:1.2rem; cursor:pointer; padding: 0 4px;">✕</button>
+      </div>
+
+      <div class="modal-stats">
+        <div class="stat-card">
+          <div class="val" id="statTotal" style="color:#fff;">0</div>
+          <div class="lbl">ทั้งหมด</div>
+        </div>
+        <div class="stat-card">
+          <div class="val" id="statPresent" style="color:var(--success);">0</div>
+          <div class="lbl">มา</div>
+        </div>
+        <div class="stat-card">
+          <div class="val" id="statAbsent" style="color:var(--danger);">0</div>
+          <div class="lbl">ขาด</div>
+        </div>
+      </div>
+
+      <div class="result-box-modal">
+        <div class="res-col present-box">
+          <h4 style="color: var(--success);">🟢 มาเรียน / เช็คชื่อแล้ว</h4>
+          <ul class="name-list" id="detailPresentList"></ul>
+        </div>
+        <div class="res-col absent-box">
+          <h4 style="color: var(--danger);">🔴 ขาด / ไม่พบชื่อ</h4>
+          <ul class="name-list" id="detailAbsentList"></ul>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 16px;">
+        <button class="btn-action btn-secondary" onclick="closeModal('detailModal')">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="deleteConfirmModal">
+    <div class="modal-box" style="text-align: center;">
+      <h2 id="deleteModalTitle">ยืนยันการลบข้อมูล</h2>
+      <p id="deleteModalMessage" style="font-size: 0.9rem; color: var(--text-sub); margin-top: 8px; font-family:'Kanit', sans-serif;">คุณต้องการลบข้อมูลนี้ใช่หรือไม่?</p>
+
+      <div class="modal-actions" style="margin-top: 24px;">
+        <button class="btn-action btn-secondary" onclick="closeDeleteModal()">ยกเลิก</button>
+        <button class="btn-action" style="background: var(--danger); border-color: var(--danger); color: #fff;" id="confirmDeleteBtn">ยืนยันการลบ</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="alertModal">
+    <div class="modal-box" style="text-align: center;">
+      <h2 id="alertTitle" style="color: #fff;">แจ้งเตือน</h2>
+      <p id="alertMessage" style="font-size: 0.95rem; color: var(--text-main); margin-top: 12px; font-family:'Kanit', sans-serif;">ข้อความแจ้งเตือน</p>
+
+      <div class="modal-actions" style="margin-top: 24px;">
+        <button class="btn-action" onclick="closeAlertModal()">ตกลง</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('keydown', function(e) {
+      if (
+        e.keyCode === 123 ||
+        (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) ||
+        (e.ctrlKey && e.keyCode === 85)
+      ) {
+        e.preventDefault();
+        return false;
+      }
+    });
+
+    function hideLoader() {
+      const loader = document.getElementById('loader');
+      if (loader && !loader.classList.contains('hidden')) {
+        loader.classList.add('hidden');
+      }
+    }
+
+    window.addEventListener('load', () => { setTimeout(hideLoader, 500); });
+    setTimeout(hideLoader, 1500);
+
+    const firebaseConfig = {
+      databaseURL: "https://winterfell-database-default-rtdb.asia-southeast1.firebasedatabase.app/",
+      projectId: "winterfell-database-default-rtdb",
+      authDomain: "winterfell-database-default-rtdb.firebaseapp.com",
+      storageBucket: "winterfell-database-default-rtdb.appspot.com"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let isAdmin = false;
+    let pendingData = null;
+    let deleteAction = null;
+    let historyCache = {}; 
+    let dbAdminPassword = "123";
+
+    const scanCard = document.getElementById('scanCard');
+    const roleBadge = document.getElementById('roleBadge');
+    const authBox = document.getElementById('authBox');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    const imageInput = document.getElementById('imageInput');
+    const preview = document.getElementById('preview');
+    const btnDeleteImg = document.getElementById('btnDeleteImg');
+    const masterListTextarea = document.getElementById('masterList');
+    let currentFile = null;
+
+    db.ref('admin_password').on('value', (snapshot) => {
+      if (snapshot.exists()) {
+        dbAdminPassword = snapshot.val();
+      }
+      
+      setTimeout(() => {
+        const adminKeyInput = document.getElementById('adminKey');
+        if (adminKeyInput && adminKeyInput.value.trim() !== '') {
+          checkAdminPassword();
+        }
+      }, 300);
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedNames = localStorage.getItem('winterfell_master_list');
+      if (savedNames) masterListTextarea.value = savedNames;
+    });
+
+    masterListTextarea.addEventListener('input', () => {
+      localStorage.setItem('winterfell_master_list', masterListTextarea.value);
+    });
+
+    function showAlertModal(title, message, isDanger = false) {
+      const titleElem = document.getElementById('alertTitle');
+      titleElem.innerText = title;
+      titleElem.style.color = isDanger ? 'var(--danger)' : '#ffffff';
+      document.getElementById('alertMessage').innerText = message;
+      document.getElementById('alertModal').classList.add('active');
+    }
+
+    function closeAlertModal() {
+      document.getElementById('alertModal').classList.remove('active');
+    }
+
+    function checkAdminPassword() {
+      const adminKeyInput = document.getElementById('adminKey');
+      if (!adminKeyInput) return;
+      
+      const inputVal = adminKeyInput.value.trim();
+      
+      if (inputVal === dbAdminPassword) {
+        isAdmin = true;
+        roleBadge.innerText = "แอดมิน";
+        roleBadge.classList.add('admin');
+        scanCard.classList.remove('locked');
+        clearAllBtn.style.display = 'block';
+        authBox.innerHTML = `<button class="btn-action btn-secondary" onclick="logoutAdmin()">ออกจากระบบ</button>`;
+        renderHistory(latestHistorySnapshot);
+      } else {
+        if (event) {
+          showAlertModal("รหัสผ่านไม่ถูกต้อง", "กรุณาลองใหม่อีกครั้ง", true);
+        }
+      }
+    }
+
+    function logoutAdmin() {
+      isAdmin = false;
+      roleBadge.innerText = "บุคคลทั่วไป";
+      roleBadge.classList.remove('admin');
+      scanCard.classList.add('locked');
+      clearAllBtn.style.display = 'none';
+      authBox.innerHTML = `
+        <input type="password" id="adminKey" placeholder="รหัสผ่านแอดมิน" onkeypress="if(event.key==='Enter') checkAdminPassword()">
+        <button class="btn-action" onclick="checkAdminPassword()">เข้าสู่ระบบ</button>
+      `;
+      renderHistory(latestHistorySnapshot);
+    }
+
+    let latestHistorySnapshot = null;
+
+    db.ref('attendance_history').on('value', (snapshot) => {
+      latestHistorySnapshot = snapshot.val();
+      renderHistory(latestHistorySnapshot);
+    });
+
+    function renderHistory(data) {
+      const historyList = document.getElementById('historyList');
+      
+      if (!data) {
+        historyCache = {};
+        historyList.innerHTML = `<p style="text-align: center; color: var(--text-sub); font-size: 0.85rem;">ไม่มีข้อมูลประวัติการสแกน</p>`;
+        return;
+      }
+
+      historyCache = data;
+      const entries = Object.entries(data).reverse();
+      
+      historyList.innerHTML = entries.map(([key, item]) => {
+        const pCount = item.present ? item.present.length : 0;
+        const aCount = item.absent ? item.absent.length : 0;
+        
+        return `
+          <div class="history-item" onclick="viewHistoryDetail('${key}')">
+            <div class="history-top">
+              <span class="war-title">${item.warName || 'Gang'}</span>
+              <div style="display:flex; align-items:center; gap:10px;" onclick="event.stopPropagation()">
+                <span class="history-time">[${item.time}]</span>
+                ${isAdmin ? `<button class="btn-danger" onclick="promptDeleteSingle('${key}')">ลบ</button>` : ''}
+              </div>
+            </div>
+            <div class="history-details">
+              <span style="color:var(--success);">🟢 มา: ${pCount} คน</span>
+              <span style="color:var(--text-sub);">|</span>
+              <span style="color:var(--danger);">🔴 ขาด: ${aCount} คน</span>
+            </div>
+            <div class="click-hint">
+              <span>👁️ คลิกการ์ดเพื่อดูรายชื่อทั้งหมด</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function viewHistoryDetail(key) {
+      const item = historyCache[key];
+      if (!item) return;
+
+      const present = item.present || [];
+      const absent = item.absent || [];
+
+      document.getElementById('detailWarTitle').innerText = item.warName || 'Gang';
+      document.getElementById('detailTime').innerText = '🕒 สแกนเมื่อ: ' + (item.time || '-');
+      
+      document.getElementById('statTotal').innerText = present.length + absent.length;
+      document.getElementById('statPresent').innerText = present.length;
+      document.getElementById('statAbsent').innerText = absent.length;
+
+      document.getElementById('detailPresentList').innerHTML = present.length > 0 
+        ? present.map(n => `<li class="name-item"><span>${n}</span><span>✓</span></li>`).join('')
+        : `<li style="font-size:0.75rem; color:var(--text-sub); padding:4px;">ไม่มีข้อมูล</li>`;
+
+      document.getElementById('detailAbsentList').innerHTML = absent.length > 0 
+        ? absent.map(n => `<li class="name-item"><span>${n}</span><span>✗</span></li>`).join('')
+        : `<li style="font-size:0.75rem; color:var(--text-sub); padding:4px;">ไม่มีข้อมูล</li>`;
+
+      document.getElementById('detailModal').classList.add('active');
+    }
+
+    function openDeleteModal(title, message, onConfirm) {
+      document.getElementById('deleteModalTitle').innerText = title;
+      document.getElementById('deleteModalMessage').innerText = message;
+      deleteAction = onConfirm;
+      document.getElementById('deleteConfirmModal').classList.add('active');
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('deleteConfirmModal').classList.remove('active');
+      deleteAction = null;
+    }
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+      if (deleteAction) deleteAction();
+      closeDeleteModal();
+    });
+
+    function promptDeleteSingle(key) {
+      if (!isAdmin) return;
+      openDeleteModal('ยืนยันการลบรายการ', 'คุณต้องการลบประวัติการสแกนนี้ใช่หรือไม่?', () => {
+        db.ref('attendance_history/' + key).remove();
+      });
+    }
+
+    function promptClearAllHistory() {
+      if (!isAdmin) return;
+      openDeleteModal('ยืนยันการลบประวัติทั้งหมด', 'คุณแน่ใจหรือไม่ว่าต้องการลบประวัติการสแกนทั้งหมด? ข้อมูลจะไม่สามารถกู้คืนได้', () => {
+        db.ref('attendance_history').remove();
+      });
+    }
+
+    function triggerFileInput(e) {
+      if (e.target.id === 'btnDeleteImg') return;
+      imageInput.click();
+    }
+
+    imageInput.addEventListener('change', (e) => {
+      if (!isAdmin) return;
+      const file = e.target.files[0];
+      if (file) handleImageFile(file);
+    });
+
+    window.addEventListener('paste', (e) => {
+      if (!isAdmin) return;
+      const items = e.clipboardData.items;
+      for (let item of items) {
+        if (item.type.indexOf('image') !== -1) {
+          handleImageFile(item.getAsFile());
+          break;
+        }
+      }
+    });
+
+    function handleImageFile(file) {
+      currentFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        btnDeleteImg.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeSelectedImage(e) {
+      if (e) e.stopPropagation();
+      currentFile = null;
+      preview.src = '';
+      preview.style.display = 'none';
+      btnDeleteImg.style.display = 'none';
+      imageInput.value = '';
+    }
+
+    function resetScanForm() {
+      removeSelectedImage();
+      document.getElementById('statusText').innerText = 'ระบบพร้อมใช้งาน';
+    }
+
+    async function processAttendance() {
+      if (!isAdmin) return;
+
+      const rawMasterText = masterListTextarea.value.trim();
+      const warTitle = 'Gang';
+
+      if (!rawMasterText || !currentFile) {
+        showAlertModal("ข้อมูลไม่ครบถ้วน", "กรุณากรอกรายชื่อทั้งหมด และอัปโหลดรูปภาพก่อนสแกน");
+        return;
+      }
+
+      const statusText = document.getElementById('statusText');
+      statusText.innerText = 'กำลังประมวลผล OCR...';
+
+      try {
+        const worker = await Tesseract.createWorker(['tha', 'eng']);
+        const ret = await worker.recognize(currentFile);
+        const scannedText = ret.data.text.toLowerCase();
+        await worker.terminate();
+
+        const masterNames = rawMasterText.split('\n').map(n => n.trim()).filter(n => n.length > 0);
+        const present = [];
+        const absent = [];
+
+        masterNames.forEach(name => {
+          if (scannedText.includes(name.toLowerCase())) {
+            present.push(name);
+          } else {
+            absent.push(name);
+          }
+        });
+
+        const now = new Date();
+        const timestamp = now.toLocaleDateString('th-TH', {
+          year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+
+        pendingData = {
+          warName: warTitle,
+          timestamp: Date.now(),
+          time: timestamp,
+          present: present,
+          absent: absent
+        };
+
+        showConfirmModal(warTitle, present, absent);
+        statusText.innerText = 'ระบบพร้อมใช้งาน';
+
+      } catch (err) {
+        console.error(err);
+        statusText.innerText = 'เกิดข้อผิดพลาดในการสแกนรูปภาพ';
+      }
+    }
+
+    function showConfirmModal(warTitle, present, absent) {
+      document.getElementById('modalWarTitle').innerText = 'ข้อมูลการเช็คชื่อ: ' + warTitle;
+      document.getElementById('modalPresentList').innerHTML = present.map(n => `<li class="name-item"><span>${n}</span></li>`).join('');
+      document.getElementById('modalAbsentList').innerHTML = absent.map(n => `<li class="name-item"><span>${n}</span></li>`).join('');
+      document.getElementById('modalPresentCount').innerText = present.length;
+      document.getElementById('modalAbsentCount').innerText = absent.length;
+      document.getElementById('confirmModal').classList.add('active');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    function saveToDatabase() {
+      if (pendingData) {
+        closeModal('confirmModal');
+        db.ref('attendance_history').push(pendingData)
+          .then(() => {
+            showAlertModal("บันทึกสำเร็จ", "บันทึกข้อมูลเรียบร้อยแล้ว");
+            resetScanForm();
+            pendingData = null;
+          })
+          .catch((error) => {
+            console.error("Firebase Error:", error);
+            showAlertModal("เกิดข้อผิดพลาด", "ไม่สามารถบันทึกข้อมูลได้: " + error.message, true);
+          });
+      }
+    }
+
+    const canvas = document.getElementById('snowCanvas');
+    const ctx = canvas.getContext('2d');
+    let flakes = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    function createSnowflakes() {
+      const flakeCount = Math.floor(window.innerWidth / 9);
+      flakes = [];
+      for (let i = 0; i < flakeCount; i++) {
+        flakes.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 2 + 0.5,
+          density: Math.random() * 1,
+          opacity: Math.random() * 0.7 + 0.2
+        });
+      }
+    }
+
+    function drawSnowflakes() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#ffffff';
+      
+      for (let i = 0; i < flakes.length; i++) {
+        const flake = flakes[i];
+        ctx.beginPath();
+        ctx.globalAlpha = flake.opacity;
+        ctx.arc(flake.x, flake.y, flake.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        flake.y += Math.cos(flake.density) + 1 + flake.radius / 2;
+        flake.x += Math.sin(flake.density) * 0.5;
+
+        if (flake.y > canvas.height) {
+          flakes[i] = {
+            x: Math.random() * canvas.width,
+            y: 0,
+            radius: flake.radius,
+            density: flake.density,
+            opacity: flake.opacity
+          };
+        }
+      }
+      requestAnimationFrame(drawSnowflakes);
+    }
+
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      createSnowflakes();
+    });
+
+    resizeCanvas();
+    createSnowflakes();
+    drawSnowflakes();
+  </script>
+</body>
+</html>
