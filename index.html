@@ -690,6 +690,49 @@
       document.getElementById('statusText').innerText = 'ระบบพร้อมใช้งาน';
     }
 
+    // ปรับปรุงฟังก์ชันแปลงภาพให้รักษาความคมชัดของตัวหนังสือและลดสัญญาณรบกวนแบบยืดหยุ่น
+    function preprocessImage(imageFile) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          img.src = e.target.result;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // ขยายขนาดภาพ 2.5 เท่า เพื่อให้ Tesseract มองเห็นรายละเอียดตัวอักษรชัดเจนขึ้น
+            const scale = 2.5;
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            
+            // ปรับแต่ง Contrast และ Grayscale แบบนุ่มนวล ไม่ตัดทิ้งข้อมูลตัวอักษรจางๆ หรือมีจุดไข่ปลา (...)
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imgData.data;
+            for (let i = 0; i < data.length; i += 4) {
+              let avg = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
+              let factor = 1.2; 
+              let val = Math.min(255, Math.max(0, (avg - 128) * factor + 128));
+              
+              data[i] = val;     // R
+              data[i + 1] = val; // G
+              data[i + 2] = val; // B
+            }
+            ctx.putImageData(imgData, 0, 0);
+            
+            canvas.toBlob((blob) => {
+              resolve(blob);
+            }, 'image/png');
+          };
+        };
+        reader.readAsDataURL(imageFile);
+      });
+    }
+
     async function processAttendance() {
       if (!isAdmin) return;
 
@@ -702,12 +745,16 @@
       }
 
       const statusText = document.getElementById('statusText');
-      statusText.innerText = 'กำลังประมวลผล OCR...';
+      statusText.innerText = 'กำลังปรับแต่งภาพและสแกน OCR...';
 
       try {
+        const processedBlob = await preprocessImage(currentFile);
+
         const worker = await Tesseract.createWorker(['tha', 'eng']);
-        const ret = await worker.recognize(currentFile);
-        const scannedText = ret.data.text.toLowerCase();
+        const ret = await worker.recognize(processedBlob);
+        
+        // เก็บข้อความดิบและแปลงเป็นตัวพิมพ์เล็ก
+        const rawScannedText = ret.data.text.toLowerCase();
         await worker.terminate();
 
         const masterNames = rawMasterText.split('\n').map(n => n.trim()).filter(n => n.length > 0);
@@ -715,7 +762,18 @@
         const absent = [];
 
         masterNames.forEach(name => {
-          if (scannedText.includes(name.toLowerCase())) {
+          const cleanName = name.toLowerCase().trim();
+          const nameKeywords = cleanName.split(/\s+/);
+          const firstKeyword = nameKeywords[0] || '';
+          const secondKeyword = nameKeywords[1] || '';
+
+          // ตรวจสอบความถูกต้อง รองรับทั้งชื่อเต็ม ชื่อตัด และชื่อที่มีจุดไข่ปลาต่อท้าย
+          const isMatched = 
+            rawScannedText.includes(cleanName.replace(/[\.\-_]/g, '')) ||
+            rawScannedText.includes(cleanName) ||
+            (firstKeyword.length > 2 && rawScannedText.includes(firstKeyword) && secondKeyword && rawScannedText.includes(secondKeyword.substring(0, 3)));
+
+          if (cleanName.length > 0 && isMatched) {
             present.push(name);
           } else {
             absent.push(name);
