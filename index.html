@@ -141,7 +141,6 @@
     .page-view { display: none; flex-direction: column; gap: 20px; width: 100%; }
     .page-view.active { display: flex; }
 
-    /* iPhone Bubble Card Design */
     .card {
       background: var(--card-bg); backdrop-filter: blur(20px);
       border: 1px solid var(--card-border); border-radius: 24px; padding: 24px;
@@ -176,7 +175,6 @@
     .form-group { margin-bottom: 16px; }
     .form-group label { display: block; font-size: 0.75rem; color: var(--text-sub); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
 
-    /* iPhone Bubble Checkbox Group */
     .checkbox-group {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -318,7 +316,6 @@
     .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
     .history-list { display: flex; flex-direction: column; gap: 12px; max-height: 400px; overflow-y: auto; }
     
-    /* iPhone Bubble Message Style for History Items */
     .history-item {
       background: var(--iphone-bubble); border: 1px solid var(--iphone-bubble-border);
       border-radius: 20px; padding: 16px; font-family: 'Kanit', sans-serif;
@@ -364,12 +361,11 @@
 
   <div class="page-nav">
     <button class="btn-action" id="btnPage1" onclick="switchPage(1)">📄 หน้าหลัก (สแกนรายชื่อ)</button>
-    <button class="btn-action btn-secondary" id="btnPage2" onclick="switchPage(2)">🚚 เช็คคนส่งของ (FiveM)</button>
+    <button class="btn-action btn-secondary" id="btnPage2" onclick="switchPage(2)">🚚 เช็คคนส่งของ </button>
   </div>
 
   <div class="app-container">
     
-    <!-- หน้าที่ 1: ระบบสแกนและประวัติหลัก -->
     <div class="page-view active" id="page1">
       <div class="card admin-only locked" id="scanCard">
         <div class="input-grid">
@@ -404,10 +400,9 @@
       </div>
     </div>
 
-    <!-- หน้าที่ 2: ระบบเช็คคนส่งของใน FiveM -->
     <div class="page-view" id="page2">
       <div class="card admin-only locked" id="deliveryCard">
-        <h2>ระบบบันทึกและเช็คยอดส่งของ</h2>
+        <h2>ระบบบันทึกและเช็คยอดส่งของ </h2>
         
         <div class="form-group" style="margin-top: 15px;">
           <label>เลือกหมวดหมู่สิ่งของ (ติ๊กเลือกได้มากกว่า 1)</label>
@@ -419,7 +414,7 @@
               <input type="checkbox" name="itemCategory" value="ยาเสพติด / สิ่งผิดกฎหมาย" onchange="toggleInputs()"> 💊 ยาเสพติด / สิ่งผิดกฎหมาย
             </label>
             <label class="checkbox-label">
-              <input type="checkbox" name="itemCategory" value="เงินสกุล / ฟอกเงิน" onchange="toggleInputs()"> 💵 เงินสกุล / เงินแดง
+              <input type="checkbox" name="itemCategory" value="เงินสกุล / ฟอกเงิน" onchange="toggleInputs()"> 💵 เงินสกุล / ฟอกเงิน
             </label>
             <label class="checkbox-label">
               <input type="checkbox" name="itemCategory" value="ทรัพยากร / วัสดุคราฟต์" onchange="toggleInputs()"> 📦 ทรัพยากร / วัสดุคราฟต์
@@ -433,31 +428,30 @@
             <textarea id="deliveryNames" placeholder="รายชื่อคนส่งของ..." style="height: 270px;"></textarea>
           </div>
           <div>
-            <!-- ช่องกรอกจำนวนย่อยแต่ละหมวดหมู่ -->
             <div class="form-group dynamic-input-container" id="container_weapon">
-              <label>🔫 จำนวน อาวุธ / ชิ้นส่วนอาวุธ</label>
+              <label>🔫 จำนวน อาวุธ / ชิ้นส่วนอาวุธ (ต่อคน)</label>
               <input type="number" id="qty_weapon" placeholder="เช่น 50">
             </div>
             <div class="form-group dynamic-input-container" id="container_drug">
-              <label>💊 จำนวน ยาเสพติด / สิ่งผิดกฎหมาย</label>
+              <label>💊 จำนวน ยาเสพติด / สิ่งผิดกฎหมาย (ต่อคน)</label>
               <input type="number" id="qty_drug" placeholder="เช่น 200">
             </div>
             <div class="form-group dynamic-input-container" id="container_resource">
-              <label>📦 จำนวน ทรัพยากร / วัสดุคราฟต์</label>
+              <label>📦 จำนวน ทรัพยากร / วัสดุคราฟต์ (ต่อคน)</label>
               <input type="number" id="qty_resource" placeholder="เช่น 500">
             </div>
             <div class="form-group dynamic-input-container" id="container_money">
-              <label>💵 จำนวนเงินขาว (บาท)</label>
-              <input type="number" id="qty_money" placeholder="เช่น 500000">
-              <label style="margin-top: 10px; color: var(--danger);">🛑 จำนวนเงินแดง (ไม่จำเป็นต้องกรอก)</label>
-              <input type="number" id="qty_red_money" placeholder="เช่น 50000 (ถ้ามี)">
+              <label>💵 จำนวนเงินขาว (ต่อคน)</label>
+              <input type="number" id="qty_money" placeholder="เช่น 50000">
+              <label style="margin-top: 10px; color: var(--danger);">🛑 จำนวนเงินแดง (ต่อคน - ถ้ามี)</label>
+              <input type="number" id="qty_red_money" placeholder="เช่น 50000">
             </div>
           </div>
         </div>
 
         <div class="form-group">
           <label>หมายเหตุเพิ่มเติม (ถ้ามี)</label>
-          <input type="text" id="deliveryNote" placeholder="เช่น พี่คริสน่ารัก">
+          <input type="text" id="deliveryNote" placeholder="เช่น พี่คริสน่ารักที่สุด">
         </div>
 
         <button class="btn-scan" onclick="submitDeliveryRecord()">บันทึกข้อมูลการส่งของ</button>
@@ -542,7 +536,6 @@
     </div>
   </div>
 
-  <!-- Modal สำหรับดูรายละเอียดการส่งของ -->
   <div class="modal-overlay" id="deliveryDetailModal">
     <div class="modal-box">
       <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -560,7 +553,7 @@
         </div>
         <div class="stat-card">
           <div class="val" id="delStatMoney" style="color:var(--success);">0</div>
-          <div class="lbl">ยอดเงินรวม (฿)</div>
+          <div class="lbl">ยอดเงินรวมสุทธิ (฿)</div>
         </div>
       </div>
 
@@ -862,8 +855,10 @@
           if (item.quantities.resource) detailsHtml += ` <span style="color:var(--text-sub)">|</span> <span style="color:#32d74b;">📦 ทรัพยากร: ${Number(item.quantities.resource).toLocaleString()}</span>`;
         }
         if (item.amount || item.redAmount) {
-          if (item.amount) detailsHtml += ` <span style="color:var(--text-sub)">|</span> <span style="color:var(--success);">💵 ขาว: ${Number(item.amount).toLocaleString()} ฿</span>`;
-          if (item.redAmount) detailsHtml += ` <span style="color:var(--text-sub)">|</span> <span style="color:var(--danger);">🛑 แดง: ${Number(item.redAmount).toLocaleString()} ฿</span>`;
+          const totalWhite = (item.amount || 0) * namesCount;
+          const totalRed = (item.redAmount || 0) * namesCount;
+          if (item.amount) detailsHtml += ` <span style="color:var(--text-sub)">|</span> <span style="color:var(--success);">💵 ขาวรวม: ${Number(totalWhite).toLocaleString()} ฿</span>`;
+          if (item.redAmount) detailsHtml += ` <span style="color:var(--text-sub)">|</span> <span style="color:var(--danger);">🛑 แดงรวม: ${Number(totalRed).toLocaleString()} ฿</span>`;
         }
 
         return `
@@ -916,27 +911,40 @@
       if (!item) return;
 
       const names = item.names || [];
+      const namesCount = names.length;
       const categories = Array.isArray(item.itemTypes) ? item.itemTypes.join(', ') : '-';
 
       document.getElementById('deliveryDetailTitle').innerText = "รายละเอียดการส่งของ";
       document.getElementById('deliveryDetailTime').innerText = '🕒 บันทึกเมื่อ: ' + (item.time || '-');
-      document.getElementById('delStatPeople').innerText = names.length;
+      document.getElementById('delStatPeople').innerText = namesCount;
       
       let totalMoneyDisplay = '0';
-      if (item.amount || item.redAmount) {
-        let totalVal = (Number(item.amount) || 0) + (Number(item.redAmount) || 0);
-        totalMoneyDisplay = Number(totalVal).toLocaleString();
-      }
+      const whitePerPerson = item.amount || 0;
+      const redPerPerson = item.redAmount || 0;
+      const totalWhite = whitePerPerson * namesCount;
+      const totalRed = redPerPerson * namesCount;
+      let totalVal = totalWhite + totalRed;
+      totalMoneyDisplay = Number(totalVal).toLocaleString();
+
       document.getElementById('delStatMoney').innerText = totalMoneyDisplay;
 
       let breakdownText = "";
       if (item.quantities) {
-        if (item.quantities.weapon) breakdownText += `🔫 อาวุธ/ชิ้นส่วน: ${Number(item.quantities.weapon).toLocaleString()} ชิ้น<br>`;
-        if (item.quantities.drug) breakdownText += `💊 ยาเสพติด/สิ่งผิดกฎหมาย: ${Number(item.quantities.drug).toLocaleString()} ชิ้น<br>`;
-        if (item.quantities.resource) breakdownText += `📦 ทรัพยากร/วัสดุคราฟต์: ${Number(item.quantities.resource).toLocaleString()} ชิ้น<br>`;
+        if (item.quantities.weapon) {
+          const totalWep = item.quantities.weapon * namesCount;
+          breakdownText += `🔫 อาวุธ/ชิ้นส่วน (ต่อคน ${Number(item.quantities.weapon).toLocaleString()}): รวม ${Number(totalWep).toLocaleString()} ชิ้น<br>`;
+        }
+        if (item.quantities.drug) {
+          const totalDrug = item.quantities.drug * namesCount;
+          breakdownText += `💊 ยาเสพติด (ต่อคน ${Number(item.quantities.drug).toLocaleString()}): รวม ${Number(totalDrug).toLocaleString()} ชิ้น<br>`;
+        }
+        if (item.quantities.resource) {
+          const totalRes = item.quantities.resource * namesCount;
+          breakdownText += `📦 ทรัพยากร (ต่อคน ${Number(item.quantities.resource).toLocaleString()}): รวม ${Number(totalRes).toLocaleString()} ชิ้น<br>`;
+        }
       }
-      if (item.amount) breakdownText += `💵 เงินขาว: ${Number(item.amount).toLocaleString()} ฿<br>`;
-      if (item.redAmount) breakdownText += `🛑 เงินแดง: ${Number(item.redAmount).toLocaleString()} ฿<br>`;
+      if (item.amount) breakdownText += `💵 เงินขาว (ต่อคน ${Number(item.amount).toLocaleString()}): รวม ${Number(totalWhite).toLocaleString()} ฿<br>`;
+      if (item.redAmount) breakdownText += `🛑 เงินแดง (ต่อคน ${Number(item.redAmount).toLocaleString()}): รวม ${Number(totalRed).toLocaleString()} ฿<br>`;
       
       document.getElementById('delStatQuantitiesBreakdown').innerHTML = breakdownText || '-';
 
